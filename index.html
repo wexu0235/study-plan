@@ -14,7 +14,7 @@
     }
 
     h1 {
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .subtitle {
@@ -22,9 +22,9 @@
       margin-bottom: 24px;
     }
 
-    .grid {
+    .top-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1.2fr;
       gap: 16px;
     }
 
@@ -36,25 +36,13 @@
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
-    .today-focus {
+    .focus-card {
       border: 2px solid #222;
     }
 
     h2 {
       margin-top: 0;
       margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      margin: 12px 0;
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    input[type="checkbox"] {
-      transform: scale(1.2);
-      margin-right: 8px;
     }
 
     .progress {
@@ -72,21 +60,52 @@
       transition: width 0.3s;
     }
 
-    #timer {
-      font-size: 48px;
-      font-weight: bold;
-      margin: 16px 0;
-      text-align: center;
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .task-row input[type="checkbox"] {
+      transform: scale(1.2);
+    }
+
+    .task-row span {
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .done {
+      text-decoration: line-through;
+      color: #777;
+    }
+
+    input[type="text"], select, textarea {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    input[type="text"] {
+      width: 55%;
+    }
+
+    textarea {
+      width: 100%;
+      height: 90px;
+      margin-top: 10px;
     }
 
     button {
-      padding: 10px 16px;
+      padding: 9px 14px;
       border: none;
       border-radius: 10px;
       background: #222;
       color: white;
       cursor: pointer;
-      margin: 6px 6px 6px 0;
       font-size: 14px;
     }
 
@@ -98,25 +117,20 @@
       background: #b00020;
     }
 
-    textarea {
-      width: 100%;
-      height: 100px;
-      margin-top: 10px;
-      font-size: 15px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
+    button.small {
+      padding: 5px 9px;
+      font-size: 12px;
     }
 
     details {
-      margin-top: 12px;
+      margin: 16px 0;
     }
 
     summary {
       cursor: pointer;
       font-weight: bold;
-      font-size: 18px;
+      font-size: 19px;
+      padding: 8px 0;
     }
 
     .small {
@@ -124,9 +138,68 @@
       font-size: 14px;
     }
 
-    @media (max-width: 800px) {
-      .grid {
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(7, 22px);
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .day-box {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: #ddd;
+      border: 1px solid #ccc;
+      position: relative;
+    }
+
+    .day-box.active {
+      background: #4caf50;
+      border-color: #4caf50;
+    }
+
+    .day-box.today {
+      outline: 2px solid #222;
+    }
+
+    .day-box:hover::after {
+      content: attr(data-date);
+      position: absolute;
+      left: 0;
+      top: 28px;
+      background: #222;
+      color: white;
+      font-size: 12px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .history-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .history-date {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .empty {
+      color: #777;
+      font-size: 14px;
+    }
+
+    @media (max-width: 850px) {
+      .top-grid {
         grid-template-columns: 1fr;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        margin-bottom: 8px;
       }
     }
   </style>
@@ -134,62 +207,109 @@
 
 <body>
   <h1>🎮 Study Behavior System</h1>
-  <p class="subtitle">今天只关注当前任务，不被整周任务压垮。</p>
+  <p class="subtitle">今天只看今天要做什么；长期进度用小方格可视化。</p>
 
-  <div class="grid">
+  <div class="top-grid">
     <div class="card">
       <h2>📊 今日状态</h2>
-      <p>完成率：<strong><span id="percent">0%</span></strong></p>
+      <p>今日完成率：<strong><span id="todayPercent">0%</span></strong></p>
       <div class="progress">
-        <div class="bar" id="bar"></div>
+        <div class="bar" id="todayBar"></div>
       </div>
-      <p>XP：<strong><span id="xp">0</span></strong></p>
-      <p class="small">目标：每天至少 100 XP</p>
+      <p>今日 XP：<strong><span id="todayXp">0</span></strong></p>
+      <p class="small">规则：完成 Today 任务后，今天的小方格会被点亮。</p>
     </div>
 
     <div class="card">
-      <h2>⏱ 番茄钟</h2>
-      <div id="timer">25:00</div>
-      <button onclick="startTimer()">开始</button>
-      <button class="secondary" onclick="pauseTimer()">暂停</button>
-      <button class="danger" onclick="resetTimer()">重置</button>
-      <p class="small">完成一个番茄钟后，记得勾选下面的“完成一个番茄钟”。</p>
+      <h2>🧩 周 / 月进度打卡</h2>
+      <p class="small">绿色 = 当天 Today 任务全部完成</p>
+      <div class="heatmap" id="heatmap"></div>
     </div>
   </div>
 
-  <div class="card today-focus">
-    <h2>🔥 Today Focus：今天只做这几件事</h2>
-    <label><input type="checkbox" class="task" data-xp="30">5046 A2 收尾</label>
-    <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构</label>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week5 复习</label>
-    <label><input type="checkbox" class="task" data-xp="10">完成一个番茄钟</label>
-  </div>
-
-  <div class="card">
-    <h2>✅ 今日最低标准</h2>
-    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 个主任务推进</label>
-    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 个轻任务</label>
-    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 节复习</label>
+  <div class="card focus-card">
+    <h2>🔥 Today 任务</h2>
+    <div>
+      <input id="todayInput" type="text" placeholder="输入今天要完成的任务，例如：5318 Week5 复习" />
+      <select id="todayXpSelect">
+        <option value="10">10 XP</option>
+        <option value="20">20 XP</option>
+        <option value="30">30 XP</option>
+      </select>
+      <button onclick="addTask('today')">添加</button>
+    </div>
+    <div id="todayList"></div>
   </div>
 
   <div class="card">
     <details open>
-      <summary>🎯 本周主线任务</summary>
-      <label><input type="checkbox" class="task" data-xp="30">5046 A2 完成（1-2h 收尾）</label>
-      <label><input type="checkbox" class="task" data-xp="30">5439 Lab 1 完成</label>
-      <label><input type="checkbox" class="task" data-xp="30">5439 Lab 2 完成</label>
-      <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构 + 初步完成</label>
+      <summary>🎯 本周任务</summary>
+      <div>
+        <input id="weeklyInput" type="text" placeholder="添加本周任务" />
+        <select id="weeklyXpSelect">
+          <option value="10">10 XP</option>
+          <option value="20">20 XP</option>
+          <option value="30">30 XP</option>
+        </select>
+        <button onclick="addTask('weekly')">添加</button>
+      </div>
+      <div id="weeklyList"></div>
     </details>
-  </div>
 
-  <div class="card">
     <details>
-      <summary>📚 5318 复习进度</summary>
-      <label><input type="checkbox" class="task" data-xp="20">5318 Week5</label>
-      <label><input type="checkbox" class="task" data-xp="20">5318 Week6</label>
-      <label><input type="checkbox" class="task" data-xp="20">5318 Week7</label>
-      <label><input type="checkbox" class="task" data-xp="20">5318 Week8</label>
-      <label><input type="checkbox" class="task" data-xp="20">5318 Week9</label>
+      <summary>📘 5318</summary>
+      <div>
+        <input id="5318Input" type="text" placeholder="添加 5318 任务" />
+        <select id="5318XpSelect">
+          <option value="10">10 XP</option>
+          <option value="20">20 XP</option>
+          <option value="30">30 XP</option>
+        </select>
+        <button onclick="addTask('5318')">添加</button>
+      </div>
+      <div id="5318List"></div>
+    </details>
+
+    <details>
+      <summary>📗 5046</summary>
+      <div>
+        <input id="5046Input" type="text" placeholder="添加 5046 任务" />
+        <select id="5046XpSelect">
+          <option value="10">10 XP</option>
+          <option value="20">20 XP</option>
+          <option value="30">30 XP</option>
+        </select>
+        <button onclick="addTask('5046')">添加</button>
+      </div>
+      <div id="5046List"></div>
+    </details>
+
+    <details>
+      <summary>🔐 5995</summary>
+      <div>
+        <input id="5995Input" type="text" placeholder="添加 5995 任务" />
+        <select id="5995XpSelect">
+          <option value="10">10 XP</option>
+          <option value="20">20 XP</option>
+          <option value="30">30 XP</option>
+        </select>
+        <button onclick="addTask('5995')">添加</button>
+      </div>
+      <div id="5995List"></div>
+    </details>
+
+    <details>
+      <summary>☁️ 5439</summary>
+      <div>
+        <input id="5439Input" type="text" placeholder="添加 5439 任务" />
+        <select id="5439XpSelect">
+          <option value="10">10 XP</option>
+          <option value="20">20 XP</option>
+          <option value="30">30 XP</option>
+        </select>
+        <button onclick="addTask('5439')">添加</button>
+      </div>
+      <div id="5439List"></div>
     </details>
   </div>
 
@@ -197,106 +317,250 @@
     <h2>🧠 今日总结</h2>
     <textarea id="summary" placeholder="今天完成了什么？卡在哪里？明天第一步做什么？"></textarea>
     <br />
-    <button onclick="saveData()">保存</button>
-    <button class="danger" onclick="resetToday()">重置今日</button>
+    <button onclick="saveSummary()">保存总结</button>
+    <button class="secondary" onclick="saveTodayToHistory()">保存今日记录</button>
+    <button class="danger" onclick="resetToday()">重置 Today</button>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>📜 历史记录</summary>
+      <div id="historyList"></div>
+    </details>
   </div>
 
   <script>
-    const tasks = document.querySelectorAll(".task");
-    const summary = document.getElementById("summary");
+    const categories = ["today", "weekly", "5318", "5046", "5995", "5439"];
 
-    let time = 25 * 60;
-    let timerInterval = null;
+    const defaultTasks = {
+      today: [
+        { text: "5046 A2 收尾", xp: 30, done: false },
+        { text: "5318 A2 理解结构", xp: 30, done: false },
+        { text: "5318 Week5 复习", xp: 20, done: false }
+      ],
+      weekly: [
+        { text: "5046 A2 完成", xp: 30, done: false },
+        { text: "5439 Lab 1 完成", xp: 30, done: false },
+        { text: "5439 Lab 2 完成", xp: 30, done: false },
+        { text: "5318 A2 理解结构 + 初步完成", xp: 30, done: false }
+      ],
+      "5318": [
+        { text: "5318 Week5", xp: 20, done: false },
+        { text: "5318 Week6", xp: 20, done: false },
+        { text: "5318 Week7", xp: 20, done: false },
+        { text: "5318 Week8", xp: 20, done: false },
+        { text: "5318 Week9", xp: 20, done: false }
+      ],
+      "5046": [],
+      "5995": [],
+      "5439": [
+        { text: "5439 Lab W5", xp: 30, done: false },
+        { text: "5439 Lab W7", xp: 30, done: false },
+        { text: "5439 Lab W8", xp: 30, done: false }
+      ]
+    };
 
-    function updateTimer() {
-      const minutes = Math.floor(time / 60);
-      const seconds = time % 60;
-      document.getElementById("timer").textContent =
-        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-    }
+    let data = loadData();
 
-    function startTimer() {
-      if (timerInterval) return;
-
-      timerInterval = setInterval(() => {
-        time--;
-        updateTimer();
-
-        if (time <= 0) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-          alert("🎉 完成一个番茄钟！现在去勾选“完成一个番茄钟”。");
-          time = 25 * 60;
-          updateTimer();
-        }
-      }, 1000);
-    }
-
-    function pauseTimer() {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-
-    function resetTimer() {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      time = 25 * 60;
-      updateTimer();
+    function todayKey() {
+      return new Date().toISOString().slice(0, 10);
     }
 
     function loadData() {
-      tasks.forEach((task, index) => {
-        task.checked = localStorage.getItem("task-" + index) === "true";
-      });
+      const saved = localStorage.getItem("study-system-data");
+      if (saved) return JSON.parse(saved);
 
-      summary.value = localStorage.getItem("summary") || "";
-      updateProgress();
-      updateTimer();
+      return {
+        tasks: defaultTasks,
+        summaries: {},
+        history: {},
+        completedDays: {}
+      };
     }
 
     function saveData() {
-      tasks.forEach((task, index) => {
-        localStorage.setItem("task-" + index, task.checked);
-      });
-
-      localStorage.setItem("summary", summary.value);
-      updateProgress();
+      localStorage.setItem("study-system-data", JSON.stringify(data));
+      renderAll();
     }
 
-    function updateProgress() {
-      let checked = 0;
-      let xp = 0;
+    function renderAll() {
+      categories.forEach(renderCategory);
+      renderTodayStatus();
+      renderHeatmap();
+      renderHistory();
+      document.getElementById("summary").value = data.summaries[todayKey()] || "";
+    }
 
-      tasks.forEach(task => {
-        if (task.checked) {
-          checked++;
-          xp += Number(task.dataset.xp);
-        }
+    function renderCategory(category) {
+      const list = document.getElementById(category + "List");
+      if (!list) return;
+
+      list.innerHTML = "";
+
+      if (!data.tasks[category]) data.tasks[category] = [];
+
+      if (data.tasks[category].length === 0) {
+        list.innerHTML = `<p class="empty">暂无任务，可以在上方添加。</p>`;
+        return;
+      }
+
+      data.tasks[category].forEach((task, index) => {
+        const row = document.createElement("div");
+        row.className = "task-row";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.onchange = () => {
+          task.done = checkbox.checked;
+          updateTodayCompletion();
+          saveData();
+        };
+
+        const span = document.createElement("span");
+        span.textContent = `${task.text}（${task.xp} XP）`;
+        if (task.done) span.classList.add("done");
+
+        const del = document.createElement("button");
+        del.textContent = "删除";
+        del.className = "small danger";
+        del.onclick = () => {
+          data.tasks[category].splice(index, 1);
+          updateTodayCompletion();
+          saveData();
+        };
+
+        row.appendChild(checkbox);
+        row.appendChild(span);
+        row.appendChild(del);
+        list.appendChild(row);
+      });
+    }
+
+    function addTask(category) {
+      const input = document.getElementById(category + "Input");
+      const xpSelect = document.getElementById(category + "XpSelect");
+
+      const text = input.value.trim();
+      const xp = Number(xpSelect.value);
+
+      if (!text) return;
+
+      data.tasks[category].push({
+        text,
+        xp,
+        done: false
       });
 
-      const percent = Math.round((checked / tasks.length) * 100);
-      document.getElementById("percent").textContent = percent + "%";
-      document.getElementById("bar").style.width = percent + "%";
-      document.getElementById("xp").textContent = xp;
+      input.value = "";
+      updateTodayCompletion();
+      saveData();
+    }
+
+    function renderTodayStatus() {
+      const todayTasks = data.tasks.today || [];
+      const total = todayTasks.length;
+      const done = todayTasks.filter(t => t.done).length;
+      const xp = todayTasks.filter(t => t.done).reduce((sum, t) => sum + Number(t.xp), 0);
+      const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
+      document.getElementById("todayPercent").textContent = percent + "%";
+      document.getElementById("todayBar").style.width = percent + "%";
+      document.getElementById("todayXp").textContent = xp;
+    }
+
+    function updateTodayCompletion() {
+      const todayTasks = data.tasks.today || [];
+      const allDone = todayTasks.length > 0 && todayTasks.every(t => t.done);
+      data.completedDays[todayKey()] = allDone;
+    }
+
+    function renderHeatmap() {
+      const heatmap = document.getElementById("heatmap");
+      heatmap.innerHTML = "";
+
+      const today = new Date();
+
+      for (let i = 27; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+
+        const key = date.toISOString().slice(0, 10);
+        const box = document.createElement("div");
+
+        box.className = "day-box";
+        box.dataset.date = key;
+
+        if (data.completedDays[key]) box.classList.add("active");
+        if (key === todayKey()) box.classList.add("today");
+
+        heatmap.appendChild(box);
+      }
+    }
+
+    function saveSummary() {
+      data.summaries[todayKey()] = document.getElementById("summary").value;
+      saveData();
+    }
+
+    function saveTodayToHistory() {
+      saveSummary();
+
+      const completed = (data.tasks.today || [])
+        .filter(t => t.done)
+        .map(t => `${t.text}（${t.xp} XP）`);
+
+      data.history[todayKey()] = {
+        completed,
+        summary: data.summaries[todayKey()] || ""
+      };
+
+      alert("今日记录已保存到历史记录。");
+      saveData();
+    }
+
+    function renderHistory() {
+      const historyList = document.getElementById("historyList");
+      const entries = Object.entries(data.history).sort((a, b) => b[0].localeCompare(a[0]));
+
+      if (entries.length === 0) {
+        historyList.innerHTML = `<p class="empty">还没有历史记录。完成一天后点击“保存今日记录”。</p>`;
+        return;
+      }
+
+      historyList.innerHTML = "";
+
+      entries.forEach(([date, record]) => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+
+        const completedText = record.completed.length
+          ? record.completed.map(item => `<li>${item}</li>`).join("")
+          : "<li>当天没有已完成任务</li>";
+
+        div.innerHTML = `
+          <div class="history-date">${date}</div>
+          <div><strong>完成内容：</strong></div>
+          <ul>${completedText}</ul>
+          <div><strong>总结：</strong>${record.summary || "无"}</div>
+        `;
+
+        historyList.appendChild(div);
+      });
     }
 
     function resetToday() {
-      const confirmReset = confirm("确定要重置今天的勾选和总结吗？");
-      if (!confirmReset) return;
+      const ok = confirm("确定要重置 Today 任务和今日总结吗？");
+      if (!ok) return;
 
-      tasks.forEach(task => task.checked = false);
-      summary.value = "";
+      data.tasks.today.forEach(t => t.done = false);
+      data.summaries[todayKey()] = "";
+      data.completedDays[todayKey()] = false;
+
       saveData();
-      resetTimer();
     }
 
-    tasks.forEach(task => {
-      task.addEventListener("change", saveData);
-    });
-
-    summary.addEventListener("input", saveData);
-
-    loadData();
+    renderAll();
   </script>
 </body>
 </html>
