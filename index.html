@@ -6,98 +6,163 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f7f7f7;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px;
+      background: #f5f6f8;
       color: #222;
     }
-    h1, h2 {
-      margin-top: 30px;
+
+    h1 {
+      margin-bottom: 8px;
     }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
     .card {
       background: white;
-      padding: 20px;
+      padding: 22px;
       margin: 16px 0;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
+
+    .today-focus {
+      border: 2px solid #222;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+
     label {
       display: block;
-      margin: 10px 0;
+      margin: 12px 0;
       font-size: 16px;
+      line-height: 1.5;
     }
+
     input[type="checkbox"] {
       transform: scale(1.2);
       margin-right: 8px;
     }
+
     .progress {
-      height: 20px;
+      height: 18px;
       background: #ddd;
-      border-radius: 10px;
+      border-radius: 20px;
       overflow: hidden;
+      margin: 12px 0;
     }
+
     .bar {
       height: 100%;
       width: 0%;
       background: #4caf50;
       transition: width 0.3s;
     }
-    textarea {
-      width: 100%;
-      height: 90px;
-      margin-top: 10px;
-      font-size: 15px;
+
+    #timer {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 16px 0;
+      text-align: center;
     }
+
     button {
       padding: 10px 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #222;
       color: white;
       cursor: pointer;
+      margin: 6px 6px 6px 0;
+      font-size: 14px;
+    }
+
+    button.secondary {
+      background: #666;
+    }
+
+    button.danger {
+      background: #b00020;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
       margin-top: 10px;
+      font-size: 15px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    details {
+      margin-top: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .small {
+      color: #666;
+      font-size: 14px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
   <h1>🎮 Study Behavior System</h1>
- 
-  
-  <div class="card">
-  <h2>⏱ 番茄钟</h2>
-  <p id="timer">25:00</p>
+  <p class="subtitle">今天只关注当前任务，不被整周任务压垮。</p>
 
-  <button onclick="startTimer()">开始</button>
-  <button onclick="pauseTimer()">暂停</button>
-  <button onclick="resetTimer()">重置</button>
-</div>
-
-  <div class="card">
-    <h2>📊 今日状态</h2>
-    <p>完成率：<span id="percent">0%</span></p>
-    <div class="progress">
-      <div class="bar" id="bar"></div>
+  <div class="grid">
+    <div class="card">
+      <h2>📊 今日状态</h2>
+      <p>完成率：<strong><span id="percent">0%</span></strong></p>
+      <div class="progress">
+        <div class="bar" id="bar"></div>
+      </div>
+      <p>XP：<strong><span id="xp">0</span></strong></p>
+      <p class="small">目标：每天至少 100 XP</p>
     </div>
-    <p>XP：<span id="xp">0</span></p>
+
+    <div class="card">
+      <h2>⏱ 番茄钟</h2>
+      <div id="timer">25:00</div>
+      <button onclick="startTimer()">开始</button>
+      <button class="secondary" onclick="pauseTimer()">暂停</button>
+      <button class="danger" onclick="resetTimer()">重置</button>
+      <p class="small">完成一个番茄钟后，记得勾选下面的“完成一个番茄钟”。</p>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>🎯 本周主线任务</h2>
-    <label><input type="checkbox" class="task" data-xp="30">5046 A2 完成</label>
-    <label><input type="checkbox" class="task" data-xp="30">5439 Lab 1 完成</label>
-    <label><input type="checkbox" class="task" data-xp="30">5439 Lab 2 完成</label>
-    <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构 + 初步完成</label>
-  </div>
-
-  <div class="card">
-    <h2>📚 5318 复习</h2>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week5</label>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week6</label>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week7</label>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week8</label>
-    <label><input type="checkbox" class="task" data-xp="20">5318 Week9</label>
+  <div class="card today-focus">
+    <h2>🔥 Today Focus：今天只做这几件事</h2>
+    <label><input type="checkbox" class="task" data-xp="30">5046 A2 收尾</label>
+    <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构</label>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week5 复习</label>
+    <label><input type="checkbox" class="task" data-xp="10">完成一个番茄钟</label>
   </div>
 
   <div class="card">
@@ -108,28 +173,92 @@
   </div>
 
   <div class="card">
+    <details open>
+      <summary>🎯 本周主线任务</summary>
+      <label><input type="checkbox" class="task" data-xp="30">5046 A2 完成（1-2h 收尾）</label>
+      <label><input type="checkbox" class="task" data-xp="30">5439 Lab 1 完成</label>
+      <label><input type="checkbox" class="task" data-xp="30">5439 Lab 2 完成</label>
+      <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构 + 初步完成</label>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>📚 5318 复习进度</summary>
+      <label><input type="checkbox" class="task" data-xp="20">5318 Week5</label>
+      <label><input type="checkbox" class="task" data-xp="20">5318 Week6</label>
+      <label><input type="checkbox" class="task" data-xp="20">5318 Week7</label>
+      <label><input type="checkbox" class="task" data-xp="20">5318 Week8</label>
+      <label><input type="checkbox" class="task" data-xp="20">5318 Week9</label>
+    </details>
+  </div>
+
+  <div class="card">
     <h2>🧠 今日总结</h2>
     <textarea id="summary" placeholder="今天完成了什么？卡在哪里？明天第一步做什么？"></textarea>
+    <br />
     <button onclick="saveData()">保存</button>
-    <button onclick="resetToday()">重置今日</button>
+    <button class="danger" onclick="resetToday()">重置今日</button>
   </div>
 
   <script>
     const tasks = document.querySelectorAll(".task");
     const summary = document.getElementById("summary");
 
+    let time = 25 * 60;
+    let timerInterval = null;
+
+    function updateTimer() {
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      document.getElementById("timer").textContent =
+        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+
+      timerInterval = setInterval(() => {
+        time--;
+        updateTimer();
+
+        if (time <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          alert("🎉 完成一个番茄钟！现在去勾选“完成一个番茄钟”。");
+          time = 25 * 60;
+          updateTimer();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      time = 25 * 60;
+      updateTimer();
+    }
+
     function loadData() {
       tasks.forEach((task, index) => {
         task.checked = localStorage.getItem("task-" + index) === "true";
       });
+
       summary.value = localStorage.getItem("summary") || "";
       updateProgress();
+      updateTimer();
     }
 
     function saveData() {
       tasks.forEach((task, index) => {
         localStorage.setItem("task-" + index, task.checked);
       });
+
       localStorage.setItem("summary", summary.value);
       updateProgress();
     }
@@ -152,9 +281,13 @@
     }
 
     function resetToday() {
+      const confirmReset = confirm("确定要重置今天的勾选和总结吗？");
+      if (!confirmReset) return;
+
       tasks.forEach(task => task.checked = false);
       summary.value = "";
       saveData();
+      resetTimer();
     }
 
     tasks.forEach(task => {
