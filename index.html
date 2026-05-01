@@ -30,14 +30,9 @@
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
-    .focus-card {
-      border: 2px solid #222;
-    }
+    .focus-card { border: 2px solid #222; }
 
-    h2 {
-      margin-top: 0;
-      margin-bottom: 16px;
-    }
+    h2 { margin-top: 0; }
 
     .progress {
       height: 18px;
@@ -81,7 +76,6 @@
       margin-left: 4px;
     }
 
-    button.secondary { background: #666; }
     button.danger { background: #b00020; }
     button.small {
       padding: 5px 9px;
@@ -109,9 +103,7 @@
       color: #777;
     }
 
-    details {
-      margin: 16px 0;
-    }
+    details { margin: 16px 0; }
 
     summary {
       cursor: pointer;
@@ -120,7 +112,7 @@
       padding: 8px 0;
     }
 
-    .small {
+    .small, .empty {
       color: #666;
       font-size: 14px;
     }
@@ -150,7 +142,6 @@
       line-height: 30px;
       font-size: 13px;
       color: #555;
-      position: relative;
     }
 
     .day-box.empty-day {
@@ -180,11 +171,6 @@
       margin-bottom: 6px;
     }
 
-    .empty {
-      color: #777;
-      font-size: 14px;
-    }
-
     @media (max-width: 850px) {
       .top-grid { grid-template-columns: 1fr; }
       input[type="text"] {
@@ -197,7 +183,7 @@
 
 <body>
   <h1>🎮 Study Behavior System</h1>
-  <p class="subtitle">只要完成 Today 任务，就点亮当天进度格。</p>
+  <p class="subtitle">Today 任务全部完成后，自动点亮今天的进度格。所有内容会自动保存。</p>
 
   <div class="top-grid">
     <div class="card">
@@ -218,18 +204,13 @@
 
   <div class="card focus-card">
     <h2>🔥 Today 任务</h2>
+    <input id="todayInput" type="text" placeholder="添加今天要完成的任务" />
+    <button onclick="addTask('today')">添加</button>
 
-    <div>
-      <input id="todayInput" type="text" placeholder="添加今天要完成的任务" />
-      <button onclick="addTask('today')">添加</button>
-    </div>
+    <br /><br />
 
-    <br />
-
-    <div>
-      <select id="importSelect"></select>
-      <button onclick="importWeeklyTask()">从本周任务导入</button>
-    </div>
+    <select id="importSelect"></select>
+    <button onclick="importWeeklyTask()">从本周任务导入</button>
 
     <div id="todayList"></div>
   </div>
@@ -237,46 +218,36 @@
   <div class="card">
     <details open>
       <summary>🎯 本周任务</summary>
-      <div>
-        <input id="weeklyInput" type="text" placeholder="添加本周任务" />
-        <button onclick="addTask('weekly')">添加</button>
-      </div>
+      <input id="weeklyInput" type="text" placeholder="添加本周任务" />
+      <button onclick="addTask('weekly')">添加</button>
       <div id="weeklyList"></div>
     </details>
 
     <details>
       <summary>📘 5318</summary>
-      <div>
-        <input id="5318Input" type="text" placeholder="添加 5318 任务" />
-        <button onclick="addTask('5318')">添加</button>
-      </div>
+      <input id="5318Input" type="text" placeholder="添加 5318 任务" />
+      <button onclick="addTask('5318')">添加</button>
       <div id="5318List"></div>
     </details>
 
     <details>
       <summary>📗 5046</summary>
-      <div>
-        <input id="5046Input" type="text" placeholder="添加 5046 任务" />
-        <button onclick="addTask('5046')">添加</button>
-      </div>
+      <input id="5046Input" type="text" placeholder="添加 5046 任务" />
+      <button onclick="addTask('5046')">添加</button>
       <div id="5046List"></div>
     </details>
 
     <details>
       <summary>🔐 5995</summary>
-      <div>
-        <input id="5995Input" type="text" placeholder="添加 5995 任务" />
-        <button onclick="addTask('5995')">添加</button>
-      </div>
+      <input id="5995Input" type="text" placeholder="添加 5995 任务" />
+      <button onclick="addTask('5995')">添加</button>
       <div id="5995List"></div>
     </details>
 
     <details>
       <summary>☁️ 5439</summary>
-      <div>
-        <input id="5439Input" type="text" placeholder="添加 5439 任务" />
-        <button onclick="addTask('5439')">添加</button>
-      </div>
+      <input id="5439Input" type="text" placeholder="添加 5439 任务" />
+      <button onclick="addTask('5439')">添加</button>
       <div id="5439List"></div>
     </details>
   </div>
@@ -285,8 +256,6 @@
     <h2>🧠 今日总结</h2>
     <textarea id="summary" placeholder="今天完成了什么？卡在哪里？明天第一步做什么？"></textarea>
     <br />
-    <button onclick="saveSummary()">保存总结</button>
-    <button class="secondary" onclick="saveTodayToHistory()">保存今日记录</button>
     <button class="danger" onclick="resetToday()">重置 Today</button>
   </div>
 
@@ -298,41 +267,42 @@
   </div>
 
   <script>
+    const STORAGE_KEY = "study-system-data-empty-v1";
     const categories = ["today", "weekly", "5318", "5046", "5995", "5439"];
-
-    const defaultTasks = {
-      today: [
-        { text: "5046 A2 收尾", done: false },
-        { text: "5318 A2 理解结构", done: false },
-        { text: "5318 Week5 复习", done: false }
-      ],
-      weekly: [
-        { text: "5046 A2 完成", done: false },
-        { text: "5439 Lab 1 完成", done: false },
-        { text: "5439 Lab 2 完成", done: false },
-        { text: "5318 A2 理解结构 + 初步完成", done: false }
-      ],
-      "5318": [
-        { text: "5318 Week5", done: false },
-        { text: "5318 Week6", done: false },
-        { text: "5318 Week7", done: false },
-        { text: "5318 Week8", done: false },
-        { text: "5318 Week9", done: false }
-      ],
-      "5046": [],
-      "5995": [],
-      "5439": [
-        { text: "5439 Lab W5", done: false },
-        { text: "5439 Lab W7", done: false },
-        { text: "5439 Lab W8", done: false }
-      ]
-    };
 
     let data = loadData();
 
+    function emptyData() {
+      return {
+        tasks: {
+          today: [],
+          weekly: [],
+          "5318": [],
+          "5046": [],
+          "5995": [],
+          "5439": []
+        },
+        summaries: {},
+        history: {},
+        completedDays: {}
+      };
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+      return emptyData();
+    }
+
+    function saveData() {
+      updateTodayCompletion();
+      autoSaveTodayRecord();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      renderAll();
+    }
+
     function todayKey() {
-      const d = new Date();
-      return formatDate(d);
+      return formatDate(new Date());
     }
 
     function formatDate(date) {
@@ -340,32 +310,6 @@
       const m = String(date.getMonth() + 1).padStart(2, "0");
       const d = String(date.getDate()).padStart(2, "0");
       return `${y}-${m}-${d}`;
-    }
-
-    function loadData() {
-      const saved = localStorage.getItem("study-system-data-v2");
-      if (saved) return JSON.parse(saved);
-
-      return {
-        tasks: defaultTasks,
-        summaries: {},
-        history: {},
-        completedDays: {}
-      };
-    }
-
-    function saveData() {
-      localStorage.setItem("study-system-data-v2", JSON.stringify(data));
-      renderAll();
-    }
-
-    function renderAll() {
-      categories.forEach(renderCategory);
-      renderTodayStatus();
-      renderCalendar();
-      renderHistory();
-      renderImportSelect();
-      document.getElementById("summary").value = data.summaries[todayKey()] || "";
     }
 
     function normalize(text) {
@@ -384,13 +328,54 @@
       });
     }
 
+    function addTask(category) {
+      const input = document.getElementById(category + "Input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      data.tasks[category].push({ text, done: false });
+      input.value = "";
+      saveData();
+    }
+
+    function importWeeklyTask() {
+      const select = document.getElementById("importSelect");
+      const text = select.value;
+      if (!text) return;
+
+      const exists = data.tasks.today.some(task => normalize(task.text) === normalize(text));
+      if (exists) {
+        alert("这个任务已经在 Today 任务中了。");
+        return;
+      }
+
+      const weeklyTask = data.tasks.weekly.find(task => task.text === text);
+      if (!weeklyTask) return;
+
+      data.tasks.today.push({
+        text: weeklyTask.text,
+        done: weeklyTask.done
+      });
+
+      saveData();
+    }
+
+    function renderAll() {
+      categories.forEach(renderCategory);
+      renderImportSelect();
+      renderTodayStatus();
+      renderCalendar();
+      renderHistory();
+
+      const summary = document.getElementById("summary");
+      if (summary.value !== (data.summaries[todayKey()] || "")) {
+        summary.value = data.summaries[todayKey()] || "";
+      }
+    }
+
     function renderCategory(category) {
       const list = document.getElementById(category + "List");
-      if (!list) return;
-
       list.innerHTML = "";
-
-      if (!data.tasks[category]) data.tasks[category] = [];
 
       if (data.tasks[category].length === 0) {
         list.innerHTML = `<p class="empty">暂无任务，可以在上方添加。</p>`;
@@ -408,7 +393,6 @@
         checkbox.onchange = () => {
           task.done = checkbox.checked;
           syncSameTasks(task.text, task.done);
-          updateTodayCompletion();
           saveData();
         };
 
@@ -421,7 +405,6 @@
         del.className = "small danger";
         del.onclick = () => {
           data.tasks[category].splice(index, 1);
-          updateTodayCompletion();
           saveData();
         };
 
@@ -432,50 +415,11 @@
       });
     }
 
-    function addTask(category) {
-      const input = document.getElementById(category + "Input");
-      const text = input.value.trim();
-
-      if (!text) return;
-
-      data.tasks[category].push({
-        text,
-        done: false
-      });
-
-      input.value = "";
-      updateTodayCompletion();
-      saveData();
-    }
-
-    function importWeeklyTask() {
-      const select = document.getElementById("importSelect");
-      const text = select.value;
-
-      if (!text) return;
-
-      const exists = data.tasks.today.some(task => normalize(task.text) === normalize(text));
-      if (exists) {
-        alert("这个任务已经在 Today 任务中了。");
-        return;
-      }
-
-      const weeklyTask = data.tasks.weekly.find(task => task.text === text);
-
-      data.tasks.today.push({
-        text: weeklyTask.text,
-        done: weeklyTask.done
-      });
-
-      updateTodayCompletion();
-      saveData();
-    }
-
     function renderImportSelect() {
       const select = document.getElementById("importSelect");
       select.innerHTML = "";
 
-      if (!data.tasks.weekly || data.tasks.weekly.length === 0) {
+      if (data.tasks.weekly.length === 0) {
         const option = document.createElement("option");
         option.value = "";
         option.textContent = "本周任务为空";
@@ -492,7 +436,7 @@
     }
 
     function renderTodayStatus() {
-      const todayTasks = data.tasks.today || [];
+      const todayTasks = data.tasks.today;
       const total = todayTasks.length;
       const done = todayTasks.filter(t => t.done).length;
       const percent = total === 0 ? 0 : Math.round((done / total) * 100);
@@ -502,9 +446,20 @@
     }
 
     function updateTodayCompletion() {
-      const todayTasks = data.tasks.today || [];
+      const todayTasks = data.tasks.today;
       const allDone = todayTasks.length > 0 && todayTasks.every(t => t.done);
       data.completedDays[todayKey()] = allDone;
+    }
+
+    function autoSaveTodayRecord() {
+      const key = todayKey();
+      const completed = data.tasks.today.filter(t => t.done).map(t => t.text);
+
+      data.history[key] = {
+        completed,
+        summary: data.summaries[key] || "",
+        completedAllToday: data.completedDays[key] || false
+      };
     }
 
     function renderCalendar() {
@@ -515,8 +470,7 @@
       const year = now.getFullYear();
       const month = now.getMonth();
 
-      document.getElementById("monthTitle").textContent =
-        `🧩 ${month + 1}月进度打卡`;
+      document.getElementById("monthTitle").textContent = `🧩 ${month + 1}月进度打卡`;
 
       const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
       weekdays.forEach(day => {
@@ -553,33 +507,12 @@
       }
     }
 
-    function saveSummary() {
-      data.summaries[todayKey()] = document.getElementById("summary").value;
-      saveData();
-    }
-
-    function saveTodayToHistory() {
-      saveSummary();
-
-      const completed = (data.tasks.today || [])
-        .filter(t => t.done)
-        .map(t => t.text);
-
-      data.history[todayKey()] = {
-        completed,
-        summary: data.summaries[todayKey()] || ""
-      };
-
-      alert("今日记录已保存。");
-      saveData();
-    }
-
     function renderHistory() {
       const historyList = document.getElementById("historyList");
       const entries = Object.entries(data.history).sort((a, b) => b[0].localeCompare(a[0]));
 
       if (entries.length === 0) {
-        historyList.innerHTML = `<p class="empty">还没有历史记录。完成一天后点击“保存今日记录”。</p>`;
+        historyList.innerHTML = `<p class="empty">还没有历史记录。勾选任务或填写总结后会自动保存。</p>`;
         return;
       }
 
@@ -594,7 +527,7 @@
           : "<li>当天没有已完成任务</li>";
 
         div.innerHTML = `
-          <div class="history-date">${date}</div>
+          <div class="history-date">${date} ${record.completedAllToday ? "✅" : ""}</div>
           <div><strong>完成内容：</strong></div>
           <ul>${completedText}</ul>
           <div><strong>总结：</strong>${record.summary || "无"}</div>
@@ -608,16 +541,20 @@
       const ok = confirm("确定要重置 Today 任务和今日总结吗？");
       if (!ok) return;
 
-      data.tasks.today.forEach(t => {
-        t.done = false;
-        syncSameTasks(t.text, false);
+      data.tasks.today.forEach(task => {
+        task.done = false;
+        syncSameTasks(task.text, false);
       });
 
       data.summaries[todayKey()] = "";
       data.completedDays[todayKey()] = false;
-
       saveData();
     }
+
+    document.getElementById("summary").addEventListener("input", () => {
+      data.summaries[todayKey()] = document.getElementById("summary").value;
+      saveData();
+    });
 
     renderAll();
   </script>
