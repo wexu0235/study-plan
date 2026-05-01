@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Study Behavior System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f7f7f7;
+      color: #222;
+    }
+    h1, h2 {
+      margin-top: 30px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      margin: 16px 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-right: 8px;
+    }
+    .progress {
+      height: 20px;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+      transition: width 0.3s;
+    }
+    textarea {
+      width: 100%;
+      height: 90px;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #222;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🎮 Study Behavior System</h1>
+
+  <div class="card">
+    <h2>📊 今日状态</h2>
+    <p>完成率：<span id="percent">0%</span></p>
+    <div class="progress">
+      <div class="bar" id="bar"></div>
+    </div>
+    <p>XP：<span id="xp">0</span></p>
+  </div>
+
+  <div class="card">
+    <h2>🎯 本周主线任务</h2>
+    <label><input type="checkbox" class="task" data-xp="30">5046 A2 完成</label>
+    <label><input type="checkbox" class="task" data-xp="30">5439 Lab 1 完成</label>
+    <label><input type="checkbox" class="task" data-xp="30">5439 Lab 2 完成</label>
+    <label><input type="checkbox" class="task" data-xp="30">5318 A2 理解结构 + 初步完成</label>
+  </div>
+
+  <div class="card">
+    <h2>📚 5318 复习</h2>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week5</label>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week6</label>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week7</label>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week8</label>
+    <label><input type="checkbox" class="task" data-xp="20">5318 Week9</label>
+  </div>
+
+  <div class="card">
+    <h2>✅ 今日最低标准</h2>
+    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 个主任务推进</label>
+    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 个轻任务</label>
+    <label><input type="checkbox" class="task" data-xp="10">至少完成 1 节复习</label>
+  </div>
+
+  <div class="card">
+    <h2>🧠 今日总结</h2>
+    <textarea id="summary" placeholder="今天完成了什么？卡在哪里？明天第一步做什么？"></textarea>
+    <button onclick="saveData()">保存</button>
+    <button onclick="resetToday()">重置今日</button>
+  </div>
+
+  <script>
+    const tasks = document.querySelectorAll(".task");
+    const summary = document.getElementById("summary");
+
+    function loadData() {
+      tasks.forEach((task, index) => {
+        task.checked = localStorage.getItem("task-" + index) === "true";
+      });
+      summary.value = localStorage.getItem("summary") || "";
+      updateProgress();
+    }
+
+    function saveData() {
+      tasks.forEach((task, index) => {
+        localStorage.setItem("task-" + index, task.checked);
+      });
+      localStorage.setItem("summary", summary.value);
+      updateProgress();
+    }
+
+    function updateProgress() {
+      let checked = 0;
+      let xp = 0;
+
+      tasks.forEach(task => {
+        if (task.checked) {
+          checked++;
+          xp += Number(task.dataset.xp);
+        }
+      });
+
+      const percent = Math.round((checked / tasks.length) * 100);
+      document.getElementById("percent").textContent = percent + "%";
+      document.getElementById("bar").style.width = percent + "%";
+      document.getElementById("xp").textContent = xp;
+    }
+
+    function resetToday() {
+      tasks.forEach(task => task.checked = false);
+      summary.value = "";
+      saveData();
+    }
+
+    tasks.forEach(task => {
+      task.addEventListener("change", saveData);
+    });
+
+    summary.addEventListener("input", saveData);
+
+    loadData();
+  </script>
+</body>
+</html>
