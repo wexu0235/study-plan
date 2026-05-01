@@ -14,11 +14,7 @@
     }
 
     h1 { margin-bottom: 6px; }
-
-    .subtitle {
-      color: #666;
-      margin-bottom: 24px;
-    }
+    .subtitle { color: #666; margin-bottom: 24px; }
 
     .top-grid {
       display: grid;
@@ -34,9 +30,7 @@
       box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
-    .focus-card {
-      border: 2px solid #222;
-    }
+    .focus-card { border: 2px solid #222; }
 
     h2 {
       margin-top: 0;
@@ -66,9 +60,7 @@
       box-sizing: border-box;
     }
 
-    input[type="text"] {
-      width: 60%;
-    }
+    input[type="text"] { width: 60%; }
 
     textarea {
       width: 100%;
@@ -87,13 +79,8 @@
       margin-left: 4px;
     }
 
-    button.danger {
-      background: #b00020;
-    }
-
-    button.secondary {
-      background: #666;
-    }
+    button.danger { background: #b00020; }
+    button.secondary { background: #666; }
 
     button.small {
       padding: 5px 9px;
@@ -107,9 +94,7 @@
       margin: 10px 0;
     }
 
-    .task-row input[type="checkbox"] {
-      transform: scale(1.2);
-    }
+    .task-row input[type="checkbox"] { transform: scale(1.2); }
 
     .task-row span {
       flex: 1;
@@ -121,9 +106,7 @@
       color: #777;
     }
 
-    details {
-      margin: 16px 0;
-    }
+    details { margin: 16px 0; }
 
     summary {
       cursor: pointer;
@@ -135,6 +118,12 @@
     .small, .empty {
       color: #666;
       font-size: 14px;
+    }
+
+    .import-block {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
     }
 
     .calendar-grid {
@@ -192,18 +181,14 @@
     }
 
     @media (max-width: 850px) {
-      .top-grid {
-        grid-template-columns: 1fr;
-      }
+      .top-grid { grid-template-columns: 1fr; }
 
       input[type="text"] {
         width: 100%;
         margin-bottom: 8px;
       }
 
-      button {
-        margin-top: 6px;
-      }
+      button { margin-top: 6px; }
     }
   </style>
 </head>
@@ -231,13 +216,25 @@
 
   <div class="card focus-card">
     <h2>🔥 Today 任务</h2>
-    <input id="todayInput" type="text" placeholder="添加今天要完成的任务" />
+
+    <input id="todayInput" type="text" placeholder="手动添加今天要完成的任务" />
     <button onclick="addTask('today')">添加</button>
 
-    <br /><br />
+    <div class="import-block">
+      来源：
+      <select id="todaySource" onchange="updateTaskOptions('today')">
+        <option value="weekly">本周任务</option>
+        <option value="5318">5318</option>
+        <option value="5046">5046</option>
+        <option value="5995">5995</option>
+        <option value="5439">5439</option>
+      </select>
 
-    <select id="importSelect"></select>
-    <button onclick="importWeeklyTask()">从本周任务导入</button>
+      任务：
+      <select id="todayTaskSelect"></select>
+
+      <button onclick="importTask('today')">导入到 Today</button>
+    </div>
 
     <div id="todayList"></div>
   </div>
@@ -245,8 +242,25 @@
   <div class="card">
     <details open>
       <summary>🎯 本周任务</summary>
-      <input id="weeklyInput" type="text" placeholder="添加本周任务" />
+
+      <input id="weeklyInput" type="text" placeholder="手动添加本周任务" />
       <button onclick="addTask('weekly')">添加</button>
+
+      <div class="import-block">
+        来源：
+        <select id="weeklySource" onchange="updateTaskOptions('weekly')">
+          <option value="5318">5318</option>
+          <option value="5046">5046</option>
+          <option value="5995">5995</option>
+          <option value="5439">5439</option>
+        </select>
+
+        任务：
+        <select id="weeklyTaskSelect"></select>
+
+        <button onclick="importTask('weekly')">导入到本周任务</button>
+      </div>
+
       <div id="weeklyList"></div>
     </details>
 
@@ -283,7 +297,6 @@
     <h2>🧠 今日总结</h2>
     <textarea id="summary" placeholder="今天完成了什么？卡在哪里？明天第一步做什么？"></textarea>
     <br />
-    <button class="danger" onclick="resetToday()">重置 Today</button>
     <button class="secondary" onclick="clearAllData()">清空全部数据</button>
   </div>
 
@@ -295,7 +308,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "study-system-data-empty-v1";
+    const STORAGE_KEY = "study-system-data-two-level-import-v1";
     const categories = ["today", "weekly", "5318", "5046", "5995", "5439"];
 
     let data = loadData();
@@ -322,12 +335,16 @@
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
+
+          if (!parsed.tasks) parsed.tasks = {};
           categories.forEach(category => {
             if (!parsed.tasks[category]) parsed.tasks[category] = [];
           });
+
           if (!parsed.summaries) parsed.summaries = {};
           if (!parsed.history) parsed.history = {};
           if (!parsed.completedDays) parsed.completedDays = {};
+
           return parsed;
         } catch (e) {
           return createEmptyData();
@@ -386,24 +403,73 @@
       saveData();
     }
 
-    function importWeeklyTask() {
-      const select = document.getElementById("importSelect");
-      const text = select.value;
+    function updateTaskOptions(targetCategory) {
+      const sourceSelect = document.getElementById(targetCategory + "Source");
+      const taskSelect = document.getElementById(targetCategory + "TaskSelect");
 
-      if (!text) return;
+      if (!sourceSelect || !taskSelect) return;
 
-      const exists = data.tasks.today.some(task => normalize(task.text) === normalize(text));
-      if (exists) {
-        alert("这个任务已经在 Today 任务中了。");
+      const source = sourceSelect.value;
+      const sourceTasks = data.tasks[source] || [];
+
+      taskSelect.innerHTML = "";
+
+      const availableTasks = sourceTasks.filter(task => {
+        return !data.tasks[targetCategory].some(existing =>
+          normalize(existing.text) === normalize(task.text)
+        );
+      });
+
+      if (availableTasks.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = sourceTasks.length === 0 ? "该模块没有任务" : "全部已导入";
+        taskSelect.appendChild(option);
         return;
       }
 
-      const weeklyTask = data.tasks.weekly.find(task => task.text === text);
-      if (!weeklyTask) return;
+      availableTasks.forEach(task => {
+        const option = document.createElement("option");
+        option.value = task.text;
+        option.textContent = task.text;
+        taskSelect.appendChild(option);
+      });
+    }
 
-      data.tasks.today.push({
-        text: weeklyTask.text,
-        done: weeklyTask.done
+    function updateAllImportOptions() {
+      updateTaskOptions("today");
+      updateTaskOptions("weekly");
+    }
+
+    function importTask(targetCategory) {
+      const sourceSelect = document.getElementById(targetCategory + "Source");
+      const taskSelect = document.getElementById(targetCategory + "TaskSelect");
+
+      if (!sourceSelect || !taskSelect) return;
+
+      const source = sourceSelect.value;
+      const text = taskSelect.value;
+
+      if (!text) return;
+
+      const sourceTask = (data.tasks[source] || []).find(task =>
+        normalize(task.text) === normalize(text)
+      );
+
+      if (!sourceTask) return;
+
+      const exists = data.tasks[targetCategory].some(task =>
+        normalize(task.text) === normalize(sourceTask.text)
+      );
+
+      if (exists) {
+        alert("这个任务已经存在，不能重复导入。");
+        return;
+      }
+
+      data.tasks[targetCategory].push({
+        text: sourceTask.text,
+        done: sourceTask.done
       });
 
       saveData();
@@ -411,7 +477,6 @@
 
     function renderAll() {
       categories.forEach(renderCategory);
-      renderImportSelect();
       renderTodayStatus();
       renderCalendar();
       renderHistory();
@@ -422,6 +487,8 @@
       if (summary.value !== savedSummary) {
         summary.value = savedSummary;
       }
+
+      updateAllImportOptions();
     }
 
     function renderCategory(category) {
@@ -463,26 +530,6 @@
         row.appendChild(span);
         row.appendChild(del);
         list.appendChild(row);
-      });
-    }
-
-    function renderImportSelect() {
-      const select = document.getElementById("importSelect");
-      select.innerHTML = "";
-
-      if (!data.tasks.weekly || data.tasks.weekly.length === 0) {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "本周任务为空";
-        select.appendChild(option);
-        return;
-      }
-
-      data.tasks.weekly.forEach(task => {
-        const option = document.createElement("option");
-        option.value = task.text;
-        option.textContent = task.text;
-        select.appendChild(option);
       });
     }
 
@@ -592,21 +639,6 @@
       });
     }
 
-    function resetToday() {
-      const ok = confirm("确定要重置 Today 任务和今日总结吗？");
-      if (!ok) return;
-
-      data.tasks.today.forEach(task => {
-        task.done = false;
-        syncSameTasks(task.text, false);
-      });
-
-      data.summaries[todayKey()] = "";
-      data.completedDays[todayKey()] = false;
-
-      saveData();
-    }
-
     function clearAllData() {
       const ok = confirm("确定要清空全部数据吗？这会删除所有任务和历史记录。");
       if (!ok) return;
@@ -621,7 +653,7 @@
       saveData();
     });
 
-    ["today", "weekly", "5318", "5046", "5995", "5439"].forEach(category => {
+    categories.forEach(category => {
       const input = document.getElementById(category + "Input");
       input.addEventListener("keydown", event => {
         if (event.key === "Enter") {
